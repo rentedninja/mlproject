@@ -26,22 +26,23 @@ class DataTransformation:
         try:
             numerical_columns = ["writing_score", "reading_score"]
             categorical_columns = [
-                "gender", "race/ethnicity", "parental_level_of_education",
+                "gender", "race_ethnicity", "parental_level_of_education",
                 "lunch", "test_preparation_course"
             ]
 
-            num_pipeline = Pipeline(
+            # Ensure NaN values in categorical columns are replaced with 'Unknown'
+            cat_pipeline = Pipeline(
                 steps=[
-                    ("imputer", SimpleImputer(strategy="median")),
-                    ("scaler", StandardScaler())
+                    ("imputer", SimpleImputer(strategy="constant", fill_value="Unknown")),  # Changed to 'constant' and fill with 'Unknown'
+                    ("one_hot_encoder", OneHotEncoder(handle_unknown='ignore')),  # Ignore unknown categories during transformation
+                    ("scaler", StandardScaler(with_mean=False))  # Scaling categorical data
                 ]
             )
 
-            cat_pipeline = Pipeline(
+            num_pipeline = Pipeline(
                 steps=[
-                    ("imputer", SimpleImputer(strategy="most_frequent")),
-                    ("one_hot_encoder", OneHotEncoder()),
-                    ("scaler", StandardScaler(with_mean=False))
+                    ("imputer", SimpleImputer(strategy="median")),  # Fill missing numerical values with median
+                    ("scaler", StandardScaler())  # Scaling numerical data
                 ]
             )
 
@@ -49,7 +50,7 @@ class DataTransformation:
             logging.info(f"Numerical columns: {numerical_columns}")
 
             preprocessor = ColumnTransformer(
-                [
+                transformers=[
                     ("num_pipeline", num_pipeline, numerical_columns),
                     ("cat_pipeline", cat_pipeline, categorical_columns)
                 ]
